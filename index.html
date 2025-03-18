@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Company Intelligence Chatbot</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* Custom animations */
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        
+        .animate-pulse {
+            animation: pulse 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+        
+        @keyframes slide {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(0); }
+        }
+        
+        .animate-slide {
+            animation: slide 0.3s ease-out forwards;
+        }
+        
+        @keyframes fadein {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        .animate-fadein {
+            animation: fadein 0.5s ease-in forwards;
+        }
+        
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+        
+        .loading-dots span {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background-color: #8B5CF6;
+            margin: 0 2px;
+        }
+        
+        .loading-dots span:nth-child(1) {
+            animation: bounce 1s infinite 0s;
+        }
+        
+        .loading-dots span:nth-child(2) {
+            animation: bounce 1s infinite 0.2s;
+        }
+        
+        .loading-dots span:nth-child(3) {
+            animation: bounce 1s infinite 0.4s;
+        }
+        
+        /* Message typing effect */
+        .typing::after {
+            content: '';
+            width: 4px;
+            height: 16px;
+            background: #8B5CF6;
+            display: inline-block;
+            animation: cursor-blink 1s infinite;
+            margin-left: 2px;
+        }
+        
+        @keyframes cursor-blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0; }
+        }
+        
+        /* Custom scrollbar */
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+        }
+        
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #f3f4f6;
+        }
+        
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background-color: #c7d2fe;
+            border-radius: 20px;
+        }
+        
+        /* Glass morphism effect */
+        .glass {
+            background: rgba(255, 255, 255, 0.25);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.18);
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-r from-purple-50 to-indigo-50 min-h-screen flex flex-col">
+    <div class="container mx-auto p-4 flex-grow flex flex-col max-w-4xl">
+        <header class="py-6 text-center">
+            <h1 class="text-3xl font-bold text-indigo-700 flex items-center justify-center">
+                <i class="fas fa-robot mr-3 text-purple-500"></i>
+                Company Intelligence Chatbot
+            </h1>
+            <p class="text-gray-600 mt-2 animate-fadein">Ask questions about any company by providing their URL or name</p>
+        </header>
+
+        <div id="company-info" class="mb-4 p-4 rounded-lg glass shadow-lg hidden">
+            <div class="flex items-center">
+                <i class="fas fa-building text-indigo-600 mr-3 text-xl"></i>
+                <div>
+                    <h3 class="font-medium text-indigo-700">Currently analyzing:</h3>
+                    <p id="company-name" class="text-gray-800 font-semibold"></p>
+                </div>
+            </div>
+        </div>
+
+        <div class="flex-grow bg-white rounded-lg shadow-lg overflow-hidden flex flex-col">
+            <div id="chat-container" class="flex-grow p-4 overflow-y-auto custom-scrollbar">
+                <div class="space-y-4">
+                    <!-- Bot welcome message -->
+                    <div class="flex items-start animate-slide">
+                        <div class="flex-shrink-0 h-10 w-10 rounded-full bg-indigo-100 flex items-center justify-center">
+                            <i class="fas fa-robot text-indigo-600"></i>
+                        </div>
+                        <div class="ml-3 bg-indigo-100 py-3 px-4 rounded-lg max-w-3xl">
+                            <p class="text-gray-800">Hello! I'm your Company Intelligence Assistant. You can start by providing:</p>
+                            <ul class="list-disc pl-5 mt-2 text-gray-700">
+                                <li>A company website URL (e.g., https://apple.com)</li>
+                                <li>OR directly type a company name (e.g., Apple)</li>
+                            </ul>
+                            <p class="mt-2 text-gray-800">Then ask any questions about that company!</p>
+                        </div>
+                    </div>
+                    <!-- Chat messages will be added here dynamically -->
+                </div>
+            </div>
+
+            <div class="border-t border-gray-200 p-4">
+                <form id="chat-form" class="flex space-x-2">
+                    <input 
+                        type="text" 
+                        id="message-input" 
+                        class="flex-grow px-4 py-2 rounded-full border border-indigo-200 focus:outline-none focus:ring-2 focus:ring-indigo-400"
+                        placeholder="Enter a company name, URL, or ask a question..." 
+                        required
+                    />
+                    <button 
+                        type="submit" 
+                        class="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-2 rounded-full transition duration-200 flex items-center justify-center"
+                    >
+                        <i class="fas fa-paper-plane mr-2"></i>
+                        Send
+                    </button>
+                </form>
+            </div>
+        </div>
+        
+        <footer class="text-center py-4 text-gray-600 text-sm">
+            <p>© 2025 Company Intelligence Chatbot</p>
+        </footer>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Generate a unique session ID
+            const sessionId = 'session_' + Math.random().toString(36).substring(2, 15);
+            const chatContainer = document.getElementById('chat-container');
+            const chatForm = document.getElementById('chat-form');
+            const messageInput = document.getElementById('message-input');
+            const companyInfo = document.getElementById('company-info');
+            const companyName = document.getElementById('company-name');
+            
+            // Backend API URL - change this to your actual backend URL
+            const API_URL = 'http://localhost:8000';
+            
+            let isProcessing = false;
+            
+            // Helper function to create a message element
+            function createMessageElement(message, isUser = false) {
+                const messageDiv = document.createElement('div');
+                messageDiv.className = 'flex items-start ' + (isUser ? 'justify-end' : 'animate-slide');
+                
+                let html = '';
+                
+                if (isUser) {
+                    html = `
+                        <div class="mr-3 bg-indigo-600 py-3 px-4 rounded-lg max-w-3xl">
+                            <p class="text-white">${message}</p>
+                        </div>
+                        <div class="flex-shrink-0 h-10 w-10 rounded-full bg-indigo-500 flex items-center justify-center">
+                            <i class="fas fa-user text-white"></i>
+                        </div>
+                    `;
+                } else {
+                    html = `
+                        <div class="flex-shrink-0 h-10 w-10 rounded-full bg-indigo-100 flex items-center justify-center">
+                            <i class="fas fa-robot text-indigo-600"></i>
+                        </div>
+                        <div class="ml-3 bg-indigo-100 py-3 px-4 rounded-lg max-w-3xl">
+                            <p class="text-gray-800">${message}</p>
+                        </div>
+                    `;
+                }
+                
+                messageDiv.innerHTML = html;
+                return messageDiv;
+            }
+            
+            // Add loading indicator
+            function addLoadingIndicator() {
+                const loadingDiv = document.createElement('div');
+                loadingDiv.className = 'flex items-start animate-fadein';
+                loadingDiv.id = 'loading-indicator';
+                
+                loadingDiv.innerHTML = `
+                    <div class="flex-shrink-0 h-10 w-10 rounded-full bg-indigo-100 flex items-center justify-center">
+                        <i class="fas fa-robot text-indigo-600"></i>
+                    </div>
+                    <div class="ml-3 bg-indigo-100 py-3 px-4 rounded-lg">
+                        <div class="loading-dots">
+                            <span></span>
+                            <span></span>
+                            <span></span>
+                        </div>
+                    </div>
+                `;
+                
+                const messagesContainer = chatContainer.querySelector('.space-y-4');
+                messagesContainer.appendChild(loadingDiv);
+                chatContainer.scrollTop = chatContainer.scrollHeight;
+            }
+            
+            // Remove loading indicator
+            function removeLoadingIndicator() {
+                const loadingIndicator = document.getElementById('loading-indicator');
+                if (loadingIndicator) {
+                    loadingIndicator.remove();
+                }
+            }
+            
+            // Update company info
+            function updateCompanyInfo(name) {
+                if (name) {
+                    companyName.textContent = name;
+                    companyInfo.classList.remove('hidden');
+                }
+            }
+            
+            // Check if text is a URL
+            function isURL(text) {
+                const urlPattern = /^(https?:\/\/)?([\da-z\.-]+)\.([a-z\.]{2,6})([\/\w \.-]*)*\/?$/i;
+                return urlPattern.test(text);
+            }
+            
+            // Send message to backend
+            async function sendMessage(message) {
+                if (isProcessing) {
+                    // If we're still processing, check session status
+                    await checkSessionStatus();
+                    return;
+                }
+                
+                // Add user message to chat
+                const chatMessages = chatContainer.querySelector('.space-y-4');
+                chatMessages.appendChild(createMessageElement(message, true));
+                
+                // Clear input
+                messageInput.value = '';
+                
+                // Add loading indicator
+                addLoadingIndicator();
+                
+                try {
+                    const response = await fetch(`${API_URL}/chat`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            message: message,
+                            session_id: sessionId
+                        })
+                    });
+                    
+                    const data = await response.json();
+                    
+                    // Remove loading indicator
+                    removeLoadingIndicator();
+                    
+                    // Update processing status
+                    isProcessing = data.is_processing;
+                    
+                    // Update company info if available
+                    if (data.company_name) {
+                        updateCompanyInfo(data.company_name);
+                    }
+                    
+                    // Add bot response to chat
+                    chatMessages.appendChild(createMessageElement(data.response));
+                    
+                    // If still processing, poll for updates
+                    if (isProcessing) {
+                        setTimeout(checkSessionStatus, 2000);
+                    }
+                    
+                } catch (error) {
+                    console.error('Error:', error);
+                    removeLoadingIndicator();
+                    
+                    // Add error message
+                    const chatMessages = chatContainer.querySelector('.space-y-4');
+                    chatMessages.appendChild(createMessageElement('Sorry, there was an error processing your request. Please try again.'));
+                }
+                
+                // Scroll to bottom
+                chatContainer.scrollTop = chatContainer.scrollHeight;
+            }
+            
+            // Check session status
+            async function checkSessionStatus() {
+                try {
+                    const response = await fetch(`${API_URL}/session/${sessionId}`);
+                    const data = await response.json();
+                    
+                    // Update processing status
+                    isProcessing = data.is_processing;
+                    
+                    // Update company info if available
+                    if (data.company_name) {
+                        updateCompanyInfo(data.company_name);
+                        
+                        // If company name is now available and we're no longer processing,
+                        // add a message that processing is complete
+                        if (!isProcessing) {
+                            removeLoadingIndicator();
+                            const chatMessages = chatContainer.querySelector('.space-y-4');
+                            chatMessages.appendChild(createMessageElement(`I'm ready to answer questions about ${data.company_name}. What would you like to know?`));
+                            chatContainer.scrollTop = chatContainer.scrollHeight;
+                        } else {
+                            // Still processing, check again later
+                            setTimeout(checkSessionStatus, 2000);
+                        }
+                    }
+                } catch (error) {
+                    console.error('Error checking session:', error);
+                }
+            }
+            
+            // Handle form submission
+            chatForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                const message = messageInput.value.trim();
+                if (message) {
+                    sendMessage(message);
+                }
+            });
+        });
+    </script>
+</body>
+</html>
